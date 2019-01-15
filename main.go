@@ -28,14 +28,14 @@ import (
 )
 
 func main() {
-	log.Println("Starting TruthMachine v0.0.1")
+	log.Println("Starting TruthMachine v0.0.2")
 
 	addr := "localhost:8765"
 	server := &osc.Server{Addr: addr}
 
-	for _, endPoint := range []string{"/calibrate", "/interrogate"} {
+	for _, endPoint := range []string{"/calibrate", "/interrogate", "/reset"} {
 		server.Handle(endPoint, func(msg *osc.Message) {
-			resp, err := http.Get("http://192.168.86.110/arduino/" + msg.Address)
+			resp, err := http.Get("http://192.168.86.112/arduino/" + msg.Address)
 			if err != nil {
 				log.Println("Unable to contact theatrical polygraph")
 			}
@@ -57,6 +57,7 @@ func main() {
 				log.Fatal("Unable to parse '" + endPoint + "' argument.")
 			}
 
+			log.Println(msg.Address)
 			msg.Append(float32(f))
 			client.Send(msg)
 		})
