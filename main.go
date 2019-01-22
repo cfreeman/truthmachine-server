@@ -20,15 +20,44 @@
 package main
 
 import (
+	"fmt"
 	"github.com/hypebeast/go-osc/osc"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
+func pulse(heartRate chan int) {
+	log.Println("Started the fully hectic Nissan Pulsar.")
+
+	pulseLength := 1000
+	start := time.Now()
+
+	for {
+		hr := <-heartRate
+		if hr > 0 {
+			pulseLength = 60000 / hr
+		}
+
+		if time.Now().Sub(start) > (time.Duration(pulseLength) * time.Millisecond) {
+			// Broadcast the heartbeat.
+			client := osc.NewClient("localhost", 53000)
+			msg := osc.NewMessage("/cue/p/start")
+			client.Send(msg)
+			log.Println(msg.Address)
+
+			start = time.Now()
+		}
+	}
+}
+
 func main() {
-	log.Println("Starting TruthMachine v0.0.2")
+	log.Println("Starting TruthMachine v0.0.6")
+
+	heartRate := make(chan int)
+	go pulse(heartRate)
 
 	addr := "localhost:8765"
 	server := &osc.Server{Addr: addr}
@@ -45,9 +74,27 @@ func main() {
 	}
 	go server.ListenAndServe()
 
-	for _, endPoint := range []string{"/l", "/h", "/r", "/g", "/p"} {
+	log.Println("Creating Qlab endpoint: '/cue/p/start'")
+	http.HandleFunc("/h", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK")
+
+		f, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
+		if err != nil {
+			log.Fatal("Unable to parse argument for '/h'.")
+		}
+
+		select {
+		case heartRate <- int(f):
+		default:
+		}
+
+	})
+
+	for _, endPoint := range []string{"/l", "/r", "/g"} {
 		log.Println("Creating HTTP endpoint: '" + endPoint + "'")
 		http.HandleFunc(endPoint, func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "OK")
+
 			client := osc.NewClient("localhost", 53000)
 
 			msg := osc.NewMessage(strings.Split(r.URL.RequestURI(), "?")[0])
