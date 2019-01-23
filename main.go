@@ -25,9 +25,14 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
+
+func lerp(srcMin float64, srcMax float64, val float64, dstMin int, dstMax int) int {
+	ratio := (val - srcMin) / (srcMax - srcMin)
+
+	return int(ratio*float64(dstMax-dstMin)) + dstMin
+}
 
 func pulse(heartRate chan int) {
 	log.Println("Started the fully hectic Nissan Pulsar.")
@@ -36,9 +41,12 @@ func pulse(heartRate chan int) {
 	start := time.Now()
 
 	for {
-		hr := <-heartRate
-		if hr > 0 {
-			pulseLength = 60000 / hr
+		select {
+		case hr := <-heartRate:
+			if hr > 0 {
+				pulseLength = 60000 / hr
+			}
+		default:
 		}
 
 		if time.Now().Sub(start) > (time.Duration(pulseLength) * time.Millisecond) {
@@ -50,11 +58,13 @@ func pulse(heartRate chan int) {
 
 			start = time.Now()
 		}
+
+		time.Sleep(50 * time.Millisecond) // Don't chew CPU.
 	}
 }
 
 func main() {
-	log.Println("Starting TruthMachine v0.0.6")
+	log.Println("Starting TruthMachine v0.0.7")
 
 	heartRate := make(chan int)
 	go pulse(heartRate)
@@ -83,32 +93,56 @@ func main() {
 			log.Fatal("Unable to parse argument for '/h'.")
 		}
 
-		select {
-		case heartRate <- int(f):
-		default:
-		}
-
+		heartRate <- int(f)
 	})
 
-	for _, endPoint := range []string{"/l", "/r", "/g"} {
-		log.Println("Creating HTTP endpoint: '" + endPoint + "'")
-		http.HandleFunc(endPoint, func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "OK")
+	log.Println("Creating Qlab endpoint: '/cue/gX/start'")
+	http.HandleFunc("/g", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK")
 
-			client := osc.NewClient("localhost", 53000)
+		f, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
+		if err != nil {
+			log.Fatal("Unable to parse argument for '/g'.")
+		}
 
-			msg := osc.NewMessage(strings.Split(r.URL.RequestURI(), "?")[0])
+		id := lerp(0.0, 700.0, f, 1, 20)
+		client := osc.NewClient("localhost", 53000)
+		msg := osc.NewMessage(fmt.Sprintf("/cue/g%d/start", id))
+		client.Send(msg)
+		log.Println(fmt.Sprintf("%s (%.2f)", msg.Address, f))
+	})
 
-			f, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
-			if err != nil {
-				log.Fatal("Unable to parse '" + endPoint + "' argument.")
-			}
+	log.Println("Creating Qlab endpoint: '/cue/rX/start'")
+	http.HandleFunc("/r", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK")
 
-			log.Println(msg.Address)
-			msg.Append(float32(f))
-			client.Send(msg)
-		})
-	}
+		f, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
+		if err != nil {
+			log.Fatal("Unable to parse argument for '/r'.")
+		}
+
+		id := lerp(0.0, 60.0, f, 1, 20)
+		client := osc.NewClient("localhost", 53000)
+		msg := osc.NewMessage(fmt.Sprintf("/cue/r%d/start", id))
+		client.Send(msg)
+		log.Println(fmt.Sprintf("%s (%.2f)", msg.Address, f))
+	})
+
+	log.Println("Creating Qlab endpoint: '/cue/lX/start'")
+	http.HandleFunc("/l", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK")
+
+		f, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
+		if err != nil {
+			log.Fatal("Unable to parse '/l' argument.")
+		}
+
+		id := lerp(-0.1, 1.0, f, 1, 100)
+		client := osc.NewClient("localhost", 53000)
+		msg := osc.NewMessage(fmt.Sprintf("/cue/l%d/start", id))
+		client.Send(msg)
+		log.Println(fmt.Sprintf("%s (%.2f)", msg.Address, f))
+	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
