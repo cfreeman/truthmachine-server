@@ -74,12 +74,12 @@ func main() {
 
 	for _, endPoint := range []string{"/calibrate", "/interrogate", "/reset"} {
 		server.Handle(endPoint, func(msg *osc.Message) {
-			resp, err := http.Get("http://10.0.1.3/arduino/" + msg.Address)
+			log.Println("Polygraph instruction: ")
+			log.Println("http://10.0.1.3/arduino" + msg.Address)
+			_, err := http.Get("http://10.0.1.3/arduino" + msg.Address)
 			if err != nil {
 				log.Println("Unable to contact theatrical polygraph")
 			}
-
-			log.Println(resp)
 		})
 	}
 	go server.ListenAndServe()
