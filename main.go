@@ -64,7 +64,7 @@ func pulse(heartRate chan int) {
 }
 
 func main() {
-	log.Println("Starting TruthMachine v0.0.7")
+	log.Println("Starting TruthMachine v0.0.10")
 
 	heartRate := make(chan int)
 	go pulse(heartRate)
@@ -74,7 +74,7 @@ func main() {
 
 	for _, endPoint := range []string{"/calibrate", "/interrogate", "/reset"} {
 		server.Handle(endPoint, func(msg *osc.Message) {
-			resp, err := http.Get("http://192.168.86.112/arduino/" + msg.Address)
+			resp, err := http.Get("http://10.0.1.3/arduino/" + msg.Address)
 			if err != nil {
 				log.Println("Unable to contact theatrical polygraph")
 			}
@@ -94,6 +94,7 @@ func main() {
 		}
 
 		heartRate <- int(f)
+		log.Println(fmt.Sprintf("/h (%.2f)", f))
 	})
 
 	log.Println("Creating Qlab endpoint: '/cue/gX/start'")
