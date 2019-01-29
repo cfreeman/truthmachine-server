@@ -66,7 +66,7 @@ func pulse(heartRate chan int) {
 }
 
 func main() {
-	log.Println("Starting TruthMachine v0.0.10")
+	log.Println("Starting TruthMachine v0.0.11")
 
 	heartRate := make(chan int)
 	go pulse(heartRate)
