@@ -23,13 +23,15 @@ import (
 	"fmt"
 	"github.com/hypebeast/go-osc/osc"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
 )
 
 func lerp(srcMin float64, srcMax float64, val float64, dstMin int, dstMax int) int {
-	ratio := (val - srcMin) / (srcMax - srcMin)
+
+	ratio := (math.Min(srcMax, math.Max(srcMin, val)) - srcMin) / (srcMax - srcMin)
 
 	return int(ratio*float64(dstMax-dstMin)) + dstMin
 }
@@ -106,7 +108,7 @@ func main() {
 			log.Fatal("Unable to parse argument for '/g'.")
 		}
 
-		id := lerp(0.0, 700.0, f, 1, 20)
+		id := lerp(400.0, 1000.0, f, 1, 20)
 		client := osc.NewClient("localhost", 53000)
 		msg := osc.NewMessage(fmt.Sprintf("/cue/g%d/start", id))
 		client.Send(msg)
@@ -138,7 +140,7 @@ func main() {
 			log.Fatal("Unable to parse '/l' argument.")
 		}
 
-		id := lerp(-0.1, 1.0, f, 1, 100)
+		id := lerp(0, 1.0, f, 1, 100)
 		client := osc.NewClient("localhost", 53000)
 		msg := osc.NewMessage(fmt.Sprintf("/cue/l%d/start", id))
 		client.Send(msg)
