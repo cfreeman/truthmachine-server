@@ -66,7 +66,7 @@ func pulse(heartRate chan int) {
 }
 
 func main() {
-	log.Println("Starting TruthMachine v0.0.11")
+	log.Println("Starting TruthMachine v0.0.12")
 
 	heartRate := make(chan int)
 	go pulse(heartRate)
@@ -105,10 +105,23 @@ func main() {
 
 		f, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
 		if err != nil {
-			log.Fatal("Unable to parse argument for '/g'.")
+			log.Fatal("Unable to parse value argument for '/g'.")
 		}
 
-		id := lerp(400.0, 1000.0, f, 1, 20)
+		b, err := strconv.ParseFloat(r.URL.Query()["b"][0], 32)
+		if err != nil {
+			log.Fatal("Unable to parse baseline argument for '/g'.")
+		}
+
+		baseline := 0.0
+		highline := 1024.0
+
+		if b > 0.1 {
+			baseline = math.Max(0.0, b-(b*0.05))
+			highline = b + (b * 0.2)
+		}
+
+		id := lerp(baseline, highline, f, 1, 20)
 		client := osc.NewClient("localhost", 53000)
 		msg := osc.NewMessage(fmt.Sprintf("/cue/g%d/start", id))
 		client.Send(msg)
@@ -140,7 +153,7 @@ func main() {
 			log.Fatal("Unable to parse '/l' argument.")
 		}
 
-		id := lerp(0, 1.0, f, 1, 100)
+		id := lerp(0, 100, f, 1, 100)
 		client := osc.NewClient("localhost", 53000)
 		msg := osc.NewMessage(fmt.Sprintf("/cue/l%d/start", id))
 		client.Send(msg)
