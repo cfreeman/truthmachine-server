@@ -78,7 +78,8 @@ func main() {
 		server.Handle(endPoint, func(msg *osc.Message) {
 			log.Println("Polygraph instruction: ")
 			log.Println("http://10.0.1.3/arduino" + msg.Address)
-			_, err := http.Get("http://10.0.1.3/arduino" + msg.Address)
+			//_, err := http.Get("http://10.0.1.3/arduino" + msg.Address)
+			_, err := http.Get("http://192.168.86.143/arduino" + msg.Address)
 
 			if err != nil {
 				log.Println("Unable to contact theatrical polygraph")
@@ -164,7 +165,7 @@ func main() {
 	log.Println("Creating calibrate notification")
 	http.HandleFunc("/d", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "OK")
-		log.Println("Calibration point completed")
+		log.Println("Calibration point recorded")
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
