@@ -66,7 +66,7 @@ func pulse(heartRate chan int) {
 }
 
 func main() {
-	log.Println("Starting TruthMachine v0.0.12")
+	log.Println("Starting TruthMachine v0.0.13")
 
 	heartRate := make(chan int)
 	go pulse(heartRate)
@@ -79,6 +79,7 @@ func main() {
 			log.Println("Polygraph instruction: ")
 			log.Println("http://10.0.1.3/arduino" + msg.Address)
 			_, err := http.Get("http://10.0.1.3/arduino" + msg.Address)
+
 			if err != nil {
 				log.Println("Unable to contact theatrical polygraph")
 			}
@@ -158,6 +159,12 @@ func main() {
 		msg := osc.NewMessage(fmt.Sprintf("/cue/l%d/start", id))
 		client.Send(msg)
 		log.Println(fmt.Sprintf("%s (%.2f)", msg.Address, f))
+	})
+
+	log.Println("Creating calibrate notification")
+	http.HandleFunc("/d", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK")
+		log.Println("Calibration point completed")
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
