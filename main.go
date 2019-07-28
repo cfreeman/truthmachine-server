@@ -78,8 +78,7 @@ func main() {
 		server.Handle(endPoint, func(msg *osc.Message) {
 			log.Println("Polygraph instruction: ")
 			log.Println("http://10.0.1.3/arduino" + msg.Address)
-			//_, err := http.Get("http://10.0.1.3/arduino" + msg.Address)
-			_, err := http.Get("http://192.168.86.143/arduino" + msg.Address)
+			_, err := http.Get("http://10.0.1.3/arduino" + msg.Address)
 
 			if err != nil {
 				log.Println("Unable to contact theatrical polygraph")
@@ -105,7 +104,7 @@ func main() {
 	http.HandleFunc("/g", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "OK")
 
-		f, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
+		gsr, err := strconv.ParseFloat(r.URL.Query()["v"][0], 32)
 		if err != nil {
 			log.Fatal("Unable to parse value argument for '/g'.")
 		}
@@ -119,15 +118,20 @@ func main() {
 		highline := 1024.0
 
 		if b > 0.1 {
-			baseline = math.Max(0.0, b-(b*0.05))
-			highline = b + (b * 0.2)
+			baseline = math.Max(0.0, b)
+			highline = baseline + 20.0
 		}
 
-		id := lerp(baseline, highline, f, 1, 20)
+		delta_gsr := (math.Max(0.0, (gsr - baseline))) / 2.0
+		id := 1
+		if delta_gsr > 0.0 {
+			id = int(math.Min(20.0, (20.0 * (math.Log10(delta_gsr) + 0.31))))
+		}
+
 		client := osc.NewClient("localhost", 53000)
 		msg := osc.NewMessage(fmt.Sprintf("/cue/g%d/start", id))
 		client.Send(msg)
-		log.Println(fmt.Sprintf("%s (%.2f)", msg.Address, f))
+		log.Println(fmt.Sprintf("%s (%.2f)", msg.Address, gsr))
 	})
 
 	log.Println("Creating Qlab endpoint: '/cue/rX/start'")
