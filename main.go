@@ -115,17 +115,16 @@ func main() {
 		}
 
 		baseline := 0.0
-		highline := 1024.0
 
 		if b > 0.1 {
 			baseline = math.Max(0.0, b)
-			highline = baseline + 20.0
+			// highline = baseline + 90.0 LOG BELOW assumes highline = baseline + 90
 		}
 
-		delta_gsr := (math.Max(0.0, (gsr - baseline))) / 2.0
+		delta_gsr := (math.Max(0.0, (gsr - baseline))) / 9.0
 		id := 1
 		if delta_gsr > 0.0 {
-			id = int(math.Min(20.0, (20.0 * (math.Log10(delta_gsr) + 0.31))))
+			id = int(math.Max(1.0, math.Min(20.0, (20.0 * (math.Log10(delta_gsr) + 0.151)))))
 		}
 
 		client := osc.NewClient("localhost", 53000)
