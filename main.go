@@ -66,7 +66,7 @@ func pulse(heartRate chan int) {
 }
 
 func main() {
-	log.Println("Starting TruthMachine v0.0.13")
+	log.Println("Starting TruthMachine v0.0.14")
 
 	heartRate := make(chan int)
 	go pulse(heartRate)
@@ -97,6 +97,12 @@ func main() {
 		}
 
 		heartRate <- int(f)
+
+		client := osc.NewClient("localhost", 53000)
+		msg := osc.NewMessage(fmt.Sprintf("/cue/bpm%03d/start", int(f)))
+		client.Send(msg)
+
+		log.Println(msg.Address)
 		log.Println(fmt.Sprintf("/h (%.2f)", f))
 	})
 
